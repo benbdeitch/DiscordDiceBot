@@ -51,8 +51,9 @@ class MyClient(discord.Client):
             for channels in guild.text_channels:
                 messages = [message async for message in channels.history(after= since_date )]
                 for message in messages:
-                    self.on_message(message)
-    
+                    await self.on_message(message)
+        set_last_date()
+        
     async def on_message(self, message):
         # we do not want the bot to reply to itself
         if message.author.id == self.user.id:
