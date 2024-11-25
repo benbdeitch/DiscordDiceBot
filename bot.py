@@ -42,7 +42,7 @@ class MyClient(discord.Client):
         print('------')
         since_date = get_last_date()
         print(f'Last run on {datetime.datetime.isoformat(since_date)}')
-        self.check_old_messages()
+        await self.check_old_messages()
 
 
     async def check_old_messages(self):
@@ -86,7 +86,7 @@ class MyClient(discord.Client):
                     data = sorted(post_response['result']['random']['data'])
                     values = "Roll Results: [" + ", ".join([str(x) for x in data]) + "]"
                     if command.group(3):
-                        reply = "Sum: " + str(sum([str(x) for x in data]) + (int(command.group(3)[1:]) if command.group(3)[0] == "+" else -1 * command.group(3)[1:]))
+                        reply = "Sum: " + str(sum(data) + (int(command.groups()[2][1:]) if command.groups()[2][0] == "+" else -1 * int(command.groups()[2][1:]))) 
                         reply = reply + "\n" + values
                     else:
                         reply = values               
