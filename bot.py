@@ -18,7 +18,8 @@ def get_last_date() -> datetime.datetime:
     since_date = datetime.datetime.now(datetime.timezone.utc)
     try:
         last_date = open("last_date.json", "r")
-        since_date = datetime.datetime.fromisoformat(last_date.readline())
+        data = json.load(last_date.readline())
+        since_date = datetime.datetime.fromisoformat(data.get("date"))
         last_date.close()
     except: 
         print("No previous datetime")
