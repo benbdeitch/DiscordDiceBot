@@ -23,22 +23,26 @@ def get_last_date() -> datetime.datetime:
         last_date.close()
     except: 
         print("No previous datetime")
+    return since_date
 
+def set_last_date():
     last_date = open("last_date.json", "w")
     last_date.write(json.dumps({"date": datetime.datetime.isoformat(datetime.datetime.now(datetime.timezone.utc))}))
     last_date.close()
 
-    return since_date
 
 
 
 
 class MyClient(discord.Client):
+
+    
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')
         since_date = get_last_date()
         print(f'Last run on {datetime.datetime.isoformat(since_date)}')
+        self.check_old_messages()
 
 
     async def check_old_messages(self):
@@ -48,7 +52,7 @@ class MyClient(discord.Client):
                 messages = [message async for message in channels.history(after= since_date )]
                 for message in messages:
                     self.on_message(message)
-
+    
     async def on_message(self, message):
         # we do not want the bot to reply to itself
         if message.author.id == self.user.id:
