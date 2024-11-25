@@ -47,7 +47,7 @@ class MyClient(discord.Client):
 
     async def check_old_messages(self):
         since_date = get_last_date()
-        for guild in self.guilds():
+        for guild in self.guilds:
             for channels in guild.text_channels:
                 messages = [message async for message in channels.history(after= since_date )]
                 for message in messages:
