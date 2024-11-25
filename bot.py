@@ -4,7 +4,8 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import re 
 import requests
-
+import datetime
+import json 
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -13,12 +14,39 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 URL = os.getenv('RANDOM_API_URL')
 API_TOKEN = os.getenv('RANDOM_API_TOKEN')
 
+def get_last_date() -> datetime.datetime:
+    since_date = datetime.datetime.now(datetime.timezone.utc)
+    try:
+        last_date = open("last_date.json", "r")
+        since_date = datetime.datetime.fromisoformat(last_date.readline())
+        last_date.close()
+    except: 
+        print("No previous datetime")
+
+    last_date = open("last_date.json", "w")
+    last_date.write(json.dumps({"date": datetime.datetime.isoformat(datetime.datetime.now(datetime.timezone.utc))}))
+    last_date.close()
+
+    return since_date
+
+
 
 
 class MyClient(discord.Client):
     async def on_ready(self):
         print(f'Logged in as {self.user} (ID: {self.user.id})')
         print('------')
+        since_date = get_last_date()
+        print(f'Last run on {datetime.datetime.isoformat(since_date)}')
+
+
+    async def check_old_messages(self):
+        since_date = get_last_date()
+        for guild in self.guilds():
+            for channels in guild.text_channels:
+                messages = [message async for message in channels.history(after= since_date )]
+                for message in messages:
+                    self.on_message(message)
 
     async def on_message(self, message):
         # we do not want the bot to reply to itself
@@ -26,12 +54,12 @@ class MyClient(discord.Client):
             return
         print("saw message")
 
-        command = re.search("^\!roll ([0-9]+)d([0-9]+)",message.content)
+        command = re.search("^\!roll ([0-9]+)d([0-9]+)([+-][0-9]+)?",message.content)
         if command:
             print("-----")
             print("worked")
             dice_amount = min(25, int(command.group(1)))
-            dice_size = min(30, int(command.group(2)))
+            dice_size = min(100, int(command.group(2)))
             reply = "Invalid request."
             #This block of the code handles the interaction with the Random.org API
             if dice_amount>0 and dice_size>0:
@@ -51,7 +79,12 @@ class MyClient(discord.Client):
                 
                     print(post_response)
                     data = sorted(post_response['result']['random']['data'])
-                    reply = "Roll Results: [" + ", ".join([str(x) for x in data]) + "]"
+                    values = "Roll Results: [" + ", ".join([str(x) for x in data]) + "]"
+                    if command.group(3):
+                        reply = "Sum: " + str(sum([str(x) for x in data]) + (int(command.group(3)[1:]) if command.group(3)[0] == "+" else -1 * command.group(3)[1:]))
+                        reply = reply + "\n" + values
+                    else:
+                        reply = values               
                     await message.reply(reply, mention_author=True)
                 else:
                     await message.reply("Request could not be processed.", mention_author=True)
